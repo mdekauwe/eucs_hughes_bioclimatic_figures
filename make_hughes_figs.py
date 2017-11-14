@@ -20,9 +20,10 @@ import os
 def main(fname):
 
     df = pd.read_csv(fname)
-    print(df)
+    #print(df)
+    #print(list(df))
 
-
+    print(df["eucalyptusMarginata"])
 
 if __name__ == "__main__":
 
