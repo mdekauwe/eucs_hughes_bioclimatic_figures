@@ -19,7 +19,12 @@ get_MAT_range <- function(species_name, sep){
   mats <- sep$worldClimTemperatureAnnualMean[which(counts > 0)]
   if(length(mats)){
     # Return temp range of species
-    max(mats, na.rm=TRUE) - min(mats, na.rm=TRUE)
+    if (min(mats, na.rm=TRUE) < 0.001) {
+      NA
+    } else {
+      max(mats, na.rm=TRUE) - min(mats, na.rm=TRUE)
+      print(min(mats, na.rm=TRUE))
+    }
   } else {
     NA
   }
