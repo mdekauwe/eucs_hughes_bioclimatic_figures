@@ -53,14 +53,14 @@ sep <- cbind(ss, ep)
 species_names <- grep("eucalyptus", names(sep), value=TRUE)
 temp_range <- sapply(species_names, get_MAT_range, sep=sep)
 
-# Exclude single point data, where there is no range
+# Exclude single point data, where there is no range, presumably botanical
+# gardens
 temp_range <- temp_range[temp_range > 0.0]
 
 # Figure out the histogram
 bins <- seq(1, 11, by=1)
 bin_count <- vector(length=length(bins))
 for (b in 1:length(bins)) {
-
   if (b == 1) {
     bin_count[b] <- length(temp_range[temp_range <= 1.0])
   } else if (b==length(bins)) {
@@ -69,7 +69,6 @@ for (b in 1:length(bins)) {
     bin_count[b] <- length(temp_range[(temp_range > bins[b-1]) &
                                       (temp_range <= bins[b])])
   }
-
 }
 
 total <- sum(bin_count)
