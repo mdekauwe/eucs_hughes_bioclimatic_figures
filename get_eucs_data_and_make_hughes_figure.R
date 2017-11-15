@@ -14,14 +14,15 @@ library(stringi)
 
 # for every species, get range of MAT
 get_MAT_range <- function(species_name, sep){
-
-  # extract MAT where the species occurs at all
   counts <- sep[,species_name]
+
+  # Exclude single occurrence records
   mats <- sep$worldClimTemperatureAnnualMean[which(counts > 1)]
+  mats <- mats[is.finite(mats)]
+
   #print(c(sum(counts), min(mats, na.rm=TRUE), max(mats, na.rm=TRUE)))
-  if(length(mats)){
-    #print(c(stri_trim_both(species_name), min(mats, na.rm=TRUE), max(mats, na.rm=TRUE)))
-    # Return temp range of species
+  if (length(mats)) {
+    # Exclude values where the MAT min is 0, not sure what that implies
     if (min(mats, na.rm=TRUE) < 0.001) {
       NA
     } else {
@@ -31,7 +32,6 @@ get_MAT_range <- function(species_name, sep){
   } else {
     NA
   }
-
 }
 
 # Get all the counts of Eucs occurrences
@@ -52,9 +52,6 @@ ep$worldClimTemperatureAnnualMean = ep$worldClimTemperatureAnnualMean / 10.0
 sep <- cbind(ss, ep)
 species_names <- grep("eucalyptus", names(sep), value=TRUE)
 temp_range <- sapply(species_names, get_MAT_range, sep=sep)
-
-# Exclude crap data
-temp_range <- temp_range[is.finite(temp_range)]
 
 # Exclude single point data, where there is no range
 temp_range <- temp_range[temp_range > 0.0]
