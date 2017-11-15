@@ -27,7 +27,6 @@ get_MAT_range <- function(species_name, sep){
       NA
     } else {
       max(mats, na.rm=TRUE) - min(mats, na.rm=TRUE)
-      #print(min(mats, na.rm=TRUE))
     }
   } else {
     NA
@@ -55,6 +54,7 @@ temp_range <- sapply(species_names, get_MAT_range, sep=sep)
 
 # Exclude single point data, where there is no range, presumably botanical
 # gardens
+temp_range <- temp_range[is.finite(temp_range)]
 temp_range <- temp_range[temp_range > 0.0]
 
 # Figure out the histogram
