@@ -45,7 +45,6 @@ sep <- cbind(ss, ep)
 species_names <- grep("eucalyptus", names(sep), value=TRUE)
 temp_range <- sapply(species_names, get_MAT_range, sep=sep)
 
-
 # Exclude crap data
 temp_range <- temp_range[is.finite(temp_range)]
 
@@ -67,6 +66,7 @@ for (b in 1:length(bins)) {
   }
 
 }
+
 total <- sum(bin_count)
 bin_count <- bin_count / total * 100.
 
