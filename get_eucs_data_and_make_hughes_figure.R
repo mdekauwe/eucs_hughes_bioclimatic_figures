@@ -7,6 +7,7 @@
 ## Date: 15/11/2017
 ## Author: Martin De Kauwe
 ####
+
 library(ALA4R)
 library(dplyr)
 
@@ -42,10 +43,8 @@ ep$worldClimTemperatureAnnualMean = ep$worldClimTemperatureAnnualMean / 10.0
 # For each species figure out the temperature range it occurs in
 sep <- cbind(ss, ep)
 species_names <- grep("eucalyptus", names(sep), value=TRUE)
-temp_range <- vector(length=length(species_names))
-for(i in 1:length(species_names)) {
-  temp_range[i] <- get_MAT_range(species_names[i], sep)
-}
+temp_range <- sapply(species_names, get_MAT_range, sep=sep)
+
 
 # Exclude crap data
 temp_range <- temp_range[is.finite(temp_range)]
