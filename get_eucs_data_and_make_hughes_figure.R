@@ -1,17 +1,37 @@
 ####
 ## Download all occurances of Eucs from ALA and get the matching MAP and MAT
-## Date: 14/11/2017
+## Then remake Fig 1 in Hughes et al. (1996) Climatic Range Sizes of
+## Eucalyptus Species in Relation to Future Climate Change. Global Ecology and
+## Biogeography Letters, 5, 23-29
+##
+## Date: 15/11/2017
 ## Author: Martin De Kauwe
 ####
 library(ALA4R)
+library(dplyr)
 
+# for every species, get range of MAT
+get_MAT_range <- function(species_name, sep){
+
+  # extract MAT where the species occurs at all
+  counts <- sep[,species_name]
+  mats <- sep$worldClimTemperatureAnnualMean[which(counts > 0)]
+  if(length(mats)){
+    # Return temp range of species
+    max(mats, na.rm=TRUE) - min(mats, na.rm=TRUE)
+  } else {
+    NA
+  }
+
+}
+
+# Get all the counts of Eucs occurrences
 ss = sites_by_species("genus:Eucalyptus",
                       wkt="POLYGON((110 -45,155 -45,155 -10,110 -10,110 -45))",
                       gridsize=0.5)
 
-# convert coordinates to cell centres
-ss$longitude = ss$longitude + 0.25
-ss$latitude = ss$latitude + 0.25
+ss <- mutate(ss, longitude = longitude + 0.25,
+             latitude = latitude + 0.25)
 
 # Get bioclimatic stuff
 env_layers = c("WorldClim: Temperature - annual mean",
@@ -19,40 +39,32 @@ env_layers = c("WorldClim: Temperature - annual mean",
 ep = intersect_points(ss[, c("latitude","longitude")], env_layers)
 ep$worldClimTemperatureAnnualMean = ep$worldClimTemperatureAnnualMean / 10.0
 
-# get just the species names
-species_names <- ss[,-c(1,2)]
-
-t_spread <- vector(length=length(species_names))
-for(i in 1:ncol(species_names)) {
-  ind <- which(species_names[,i] > 0)
-  t_range <- range(ep$worldClimTemperatureAnnualMean[ind], na.rm=TRUE)
-
-  if (is.finite(t_range[2])) {
-    maxx = t_range[2]
-  } else {
-      maxx = NA
-  }
-
-  if (is.finite(t_range[1])) {
-    minx = t_range[1]
-  } else {
-    minx = NA
-  }
-
-  t_spread[i] <- maxx - minx
+# For each species figure out the temperature range it occurs in
+sep <- cbind(ss, ep)
+species_names <- grep("eucalyptus", names(sep), value=TRUE)
+temp_range <- vector(length=length(species_names))
+for(i in 1:length(species_names)) {
+  temp_range[i] <- get_MAT_range(species_names[i], sep)
 }
 
+# Exclude crap data
+temp_range <- temp_range[is.finite(temp_range)]
 
+# Exclude single point data, where there is no range
+temp_range <- temp_range[temp_range > 0.0]
+
+# Figure out the histogram
 bins <- seq(1, 11, by=1)
 bin_count <- vector(length=length(bins))
 for (b in 1:length(bins)) {
 
   if (b == 1) {
-    bin_count[b] <- length(which(t_spread <= bins[b]))
+    bin_count[b] <- length(temp_range[temp_range <= 1.0])
   } else if (b==length(bins)) {
-    bin_count[b] <- length(which(t_spread > bins[b-1]))
+    bin_count[b] <- length(temp_range[temp_range > bins[b-1]])
   } else {
-    bin_count[b] <- length(which(t_spread > bins[b-1] & t_spread <= bins[b]))
+    bin_count[b] <- length(temp_range[(temp_range > bins[b-1]) &
+                                      (temp_range <= bins[b])])
   }
 
 }
