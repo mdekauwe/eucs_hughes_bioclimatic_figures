@@ -20,27 +20,33 @@ ep = intersect_points(ss[, c("latitude","longitude")], env_layers)
 ep$worldClimTemperatureAnnualMean = ep$worldClimTemperatureAnnualMean / 10.0
 
 # get just the species names
-x <- ss[,-c(1,2)]
+species_names <- ss[,-c(1,2)]
 
-# make a massive object that I can play with in python
-df = cbind(ep, x)
-#df = na.omit(ep)
-write.csv(df, file="Eucs_MAP_MAT.csv", sep=",")
-
-
-#count =sapply(1:nrow(x), function(y) length(which(x[y,]>0)))
-
-t_spread <- vector(length=ncol(x))
-for(s in 1:ncol(x)) {
-  ind <- which(x[,s] > 0)
+t_spread <- vector(length=length(species_names))
+for(i in 1:ncol(species_names)) {
+  ind <- which(species_names[,i] > 0)
   t_range <- range(ep$worldClimTemperatureAnnualMean[ind], na.rm=TRUE)
-  t_spread[s] <- t_range[2] - t_range[1]
+
+  if (is.finite(t_range[2])) {
+    maxx = t_range[2]
+  } else {
+      maxx = NA
+  }
+
+  if (is.finite(t_range[1])) {
+    minx = t_range[1]
+  } else {
+    minx = NA
+  }
+
+  t_spread[i] <- maxx - minx
 }
 
 
 bins <- seq(1, 11, by=1)
 bin_count <- vector(length=length(bins))
 for (b in 1:length(bins)) {
+
   if (b == 1) {
     bin_count[b] <- length(which(t_spread <= bins[b]))
   } else if (b==length(bins)) {
@@ -48,10 +54,15 @@ for (b in 1:length(bins)) {
   } else {
     bin_count[b] <- length(which(t_spread > bins[b-1] & t_spread <= bins[b]))
   }
+
 }
+total <- sum(bin_count)
+bin_count <- bin_count / total * 100.
 
-print(bin_count)
-
-#ep = cbind(ep, count)
-#df = na.omit(ep)
-#write.csv(df, file="Eucs_MAP_MAT.csv", sep=",")
+pdf("Hughes_figure_ALA.pdf", width=9, height=6)
+names(bin_count) <- c("<1", "1-2", "2-3", "3-4", "4-5", "5-6", "6-7", "7-8",
+                      "8-9", "9-10", ">10")
+xlab <- expression("Mean annual temperature range " ( degree~C))
+ylab <- "% Species"
+barplot(bin_count, xlab=xlab, ylab=ylab)
+dev.off()
