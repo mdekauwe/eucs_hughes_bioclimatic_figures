@@ -10,7 +10,6 @@
 
 library(ALA4R)
 library(dplyr)
-library(stringi)
 
 # for every species, get range of MAT
 get_MAT_range <- function(species_name, sep){
@@ -20,13 +19,15 @@ get_MAT_range <- function(species_name, sep){
   mats <- sep$worldClimTemperatureAnnualMean[which(counts > 1)]
   mats <- mats[is.finite(mats)]
 
-  #print(c(sum(counts), min(mats, na.rm=TRUE), max(mats, na.rm=TRUE)))
   if (length(mats)) {
     # Exclude values where the MAT min is 0, not sure what that implies
     if (min(mats, na.rm=TRUE) < 0.001) {
       NA
     } else {
       max(mats, na.rm=TRUE) - min(mats, na.rm=TRUE)
+      if (max(mats, na.rm=TRUE) - min(mats, na.rm=TRUE) >= 10.) {
+        print(c(trimws(species_name), sum(counts), min(mats, na.rm=TRUE), max(mats, na.rm=TRUE)))
+      }
     }
   } else {
     NA
