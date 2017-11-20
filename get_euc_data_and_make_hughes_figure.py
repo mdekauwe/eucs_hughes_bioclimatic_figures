@@ -20,6 +20,7 @@ import pandas as pd
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def main():
 
@@ -59,6 +60,7 @@ def main():
         spp_count = len(df_sp)
 
         if spp_count > 1:
+            vals = []
             lats_needed = df_sp["Latitude"].values
             lons_needed = df_sp["Longitude"].values
             Tmin = 99999.
@@ -69,20 +71,50 @@ def main():
                 r = np.where(latitudes==latx)
                 c = np.where(longitudes==lonx)
                 mat = matx[r,c][0][0]
+                vals.append(mat)
                 if mat > Tmax:
                     Tmax = mat
                 if mat < Tmin:
                     Tmin = mat
             Trange = Tmax - Tmin
 
-            # Exclude values of zero
-            if (Trange > 0.00001):
-                speices_names.append(spp)
-                species_count[spp] = {}
-                speices_range[spp] = {}
-                species_count[spp] = spp_count
-                total_count += spp_count
-                speices_range[spp] = Trange
+            vals = np.asarray(vals)
+            #P = np.percentile(vals, [2.5, 97.5])
+            #vals = vals[(P[0] < vals) & (P[1] > vals)]
+
+            # tests for outliers use the median absolute deviation rather than
+            # percentile
+            vals = vals[~is_outlier(vals)]
+            if len(vals) == 0:
+                continue
+            else:
+                Trange = np.max(vals) - np.min(vals)
+                spp_count = len(vals)
+
+                if Trange > 10:
+
+                    from mpl_toolkits.basemap import Basemap
+                    m = Basemap(projection='cyl', llcrnrlon=110., llcrnrlat=-45.,
+                                urcrnrlon=155.,urcrnrlat=-10., resolution='c')
+
+
+                    m.drawcoastlines()
+                    x,y = m(lons_needed, lats_needed)
+                    m.plot(x, y, 'bo', markersize=5)
+                    ofname = spp.replace(" ", "_") + ".png"
+                    plt.savefig(os.path.join("/Users/mdekauwe/Desktop", ofname),
+                                dpi=100)
+                    #plt.show()
+                    plt.gcf().clear()
+
+                # Exclude values of zero
+                if (Trange > 0.00001):
+                    speices_names.append(spp)
+                    species_count[spp] = {}
+                    speices_range[spp] = {}
+                    species_count[spp] = spp_count
+                    total_count += spp_count
+                    speices_range[spp] = Trange
 
     #for spp in speices_names:
     #    print(spp, species_count[spp], speices_range[spp])
@@ -113,8 +145,8 @@ def main():
             bin_count[8] += species_count[spp]
         elif Trange > 9.0 and Trange <= 10.0:
             bin_count[9] += species_count[spp]
-        elif Trange > 10.0:
-            bin_count[10] += species_count[spp]
+        #elif Trange > 10.0:
+        #    bin_count[10] += species_count[spp]
 
     bin_count = bin_count / total_count * 100.
 
@@ -140,6 +172,38 @@ def main():
     ax.set_xlabel("Mean annual temperature range ($^\circ$C)")
     plt.show()
 
+def is_outlier(points, thresh=3.5):
+    """
+    Returns a boolean array with True if points are outliers and False
+    otherwise.
+
+    Parameters:
+    -----------
+        points : An numobservations by numdimensions array of observations
+        thresh : The modified z-score to use as a threshold. Observations with
+            a modified z-score (based on the median absolute deviation) greater
+            than this value will be classified as outliers.
+
+    Returns:
+    --------
+        mask : A numobservations-length boolean array.
+
+    References:
+    ----------
+        Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect and
+        Handle Outliers", The ASQC Basic References in Quality Control:
+        Statistical Techniques, Edward F. Mykytka, Ph.D., Editor.
+    """
+    if len(points.shape) == 1:
+        points = points[:,None]
+    median = np.median(points, axis=0)
+    diff = np.sum((points - median)**2, axis=-1)
+    diff = np.sqrt(diff)
+    med_abs_deviation = np.median(diff)
+
+    modified_z_score = 0.6745 * diff / med_abs_deviation
+
+    return modified_z_score > thresh
 
 def get_mat_data():
     # Get MAT data
