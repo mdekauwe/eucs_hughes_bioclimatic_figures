@@ -39,6 +39,12 @@ ss = sites_by_species("genus:Eucalyptus",
                       wkt="POLYGON((110 -45,155 -45,155 -10,110 -10,110 -45))",
                       gridsize=0.5)
 
+ss <- occurrences('genus:Eucalyptus',
+                  wkt="POLYGON((110 -45,155 -45,155 -10,110 -10,110 -45))",
+                  fq='-basis_of_record:PreservedSpecimen',
+                  fields=c('scientificName', 'longitude', 'latitude', 'el862'),
+                  download_reason_id=7)$data
+
 ss <- mutate(ss, longitude = longitude + 0.25,
              latitude = latitude + 0.25)
 
