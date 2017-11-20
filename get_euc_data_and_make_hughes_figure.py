@@ -79,12 +79,13 @@ def main():
             Trange = Tmax - Tmin
 
             vals = np.asarray(vals)
-            #P = np.percentile(vals, [2.5, 97.5])
+            #P = np.percentile(vals, [2.5, 97.5]) # 95% percentile
             #vals = vals[(P[0] < vals) & (P[1] > vals)]
 
             # tests for outliers use the median absolute deviation rather than
-            # percentile
+            # percentile as that method is sensitive to sample size
             vals = vals[~is_outlier(vals)]
+
             if len(vals) == 0:
                 continue
             else:
